@@ -1,0 +1,60 @@
+<configuration>
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>DEBUG</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <encoder>
+            <pattern>
+                %d{dd.MM.yyyy HH:mm:ss.SSS} [Thread - %thread] %-5level %logger{20} - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <appender name="thoth" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>
+            ./log/thoth.log
+        </file>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>TRACE</level>
+            <onMatch>DENY</onMatch>
+            <onMismatch>ACCEPT</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>./log/thoth-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>1MB</maxFileSize>
+            <maxHistory>31</maxHistory>
+            <totalSizeCap>10MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>
+                %d{dd.MM.yyyy HH:mm:ss.SSS} [Thread - %thread] %-5level %logger{20} - %msg %ex{full} %n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <appender name="thoth-sys" class="ch.qos.logback.core.FileAppender">
+        <append>false</append>
+        <file>
+            ./log/thoth-sys.log
+        </file>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>TRACE</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <encoder>
+            <pattern>
+                %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <root level="all">
+        <appender-ref ref="thoth"/>
+        <appender-ref ref="thoth-sys"/>
+        <appender-ref ref="stdout"/>
+    </root>
+
+</configuration>
