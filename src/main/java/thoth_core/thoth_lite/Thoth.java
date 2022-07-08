@@ -50,10 +50,10 @@ public interface Thoth {
      *
      * @return Объект Response.
      *
-     * @see AvailablePublishers
+     * @see EnumPublicator
      * @see Response
      */
-    Response subscribe(AvailablePublishers publisher,
+    Response subscribe(EnumPublicator publisher,
                        Flow.Subscriber subscriber);
 
 }

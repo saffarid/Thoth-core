@@ -36,6 +36,12 @@ public class ThothLite
         }
     };
 
+    private final Map<EnumPublicator, SubscribeAction> subscribeActions = new HashMap<>() {{
+        for(AvaliableTables publicator : AvaliableTables.values()){
+            put(publicator, ThothLite.this::subscribeOnTable);
+        }
+    }};
+
     /**
      * Карта основных сведений о системе
      */
@@ -88,7 +94,7 @@ public class ThothLite
         //Подписка на покупки
         try {
             DBData.getInstance()
-                  .getTable(AvaliableTables.PURCHASABLE.getTableName())
+                  .getTable(AvaliableTables.Purchasable.getTableName())
                   .subscribe((Flow.Subscriber) watcherPurchasesFinish);
         }
         catch (NotContainsException e) {
@@ -182,15 +188,14 @@ public class ThothLite
         try {
             //Для атомарности операции стартуем транзакцию
             database.beginTransaction();
-            updateInTable(AvaliableTables.PURCHASABLE, purchase);
-            updateInTable(AvaliableTables.STORAGABLE, listStoragable);
+            updateInTable(AvaliableTables.Purchasable, purchase);
+            updateInTable(AvaliableTables.Storagable, listStoragable);
             database.commitTransaction();
         }
         catch (SQLException e) {
             CoreLogger.log.error(e.getMessage(), e);
             database.rollbackTransaction();
         }
-
     }
 
     /**
@@ -208,8 +213,10 @@ public class ThothLite
      * Изменение периода перечитывания базы
      */
     public void changeDelayReReadDb() {
-        PeriodAutoupdateDatabase newDelay = config.getDatabase().getPeriod();
-        if (config.getDatabase().isAutoupdate()) {
+        PeriodAutoupdateDatabase newDelay = config.getDatabase()
+                                                  .getPeriod();
+        if (config.getDatabase()
+                  .isAutoupdate()) {
             cancelAutoReReadDb();
             if (newDelay != PeriodAutoupdateDatabase.NEVER) {
                 scheduledFutureReReadDb = periodReReadDb.scheduleWithFixedDelay(reReader,
@@ -238,19 +245,14 @@ public class ThothLite
         return new Response<Configuration>(ResponseCode.OK, "", config);
     }
 
-    @Override
-    public Response subscribe(AvailablePublishers publisher,
-                              Flow.Subscriber subscriber) {
-        return null;
-    }
-
     /**
      * @param table запрашиваемая таблица.
      *
      * @return список содержимого таблицы.
      */
     public List<? extends Identifiable> getDataFromTable(AvaliableTables table) throws NotContainsException {
-        return dbData.getTable(getTableName(table)).getDatas();
+        return dbData.getTable(table.getTableName())
+                     .getDatas();
     }
 
     /**
@@ -290,7 +292,15 @@ public class ThothLite
     }
 
     public String getVersion() {
-        return new StringBuilder(VERSION_CORE).append("_").append(info.get(SystemInfoKeys.VERSION_DB)).toString();
+        return new StringBuilder(VERSION_CORE).append("_")
+                                              .append(info.get(SystemInfoKeys.VERSION_DB))
+                                              .toString();
+    }
+
+    @Override
+    public Response subscribe(EnumPublicator publisher,
+                              Flow.Subscriber subscriber) {
+        return null;
     }
 
     /**
@@ -332,11 +342,14 @@ public class ThothLite
     /**
      * Функция подписывает на изменения в таблице
      */
-    public void subscribeOnTable(AvaliableTables table,
-                                 Flow.Subscriber subscriber) throws NotContainsException {
+    public void subscribeOnTable(EnumPublicator table,
+                                 Flow.Subscriber<?> subscriber) throws NotContainsException {
         CoreLogger.log.info("Subscribed to " + table);
-        DBData.getInstance().getTable(getTableName(table)).subscribe(subscriber);
+        DBData.getInstance()
+              .getTable(((AvaliableTables) table).getTableName())
+              .subscribe(subscriber);
     }
+
 
     @Override
     public Response executeDataBase(CommandDatabase command,
@@ -345,7 +358,8 @@ public class ThothLite
         Response response;
         try {
             database.beginTransaction();
-            databaseActions.get(command).action(table, datas);
+            databaseActions.get(command)
+                           .action(table, datas);
             database.commitTransaction();
             response = new Response(ResponseCode.OK, "The action is executed", null);
         }
@@ -372,8 +386,7 @@ public class ThothLite
      * @param datas добавляемые данные.
      */
     private void insertToTable(AvaliableTables t,
-                               List<? extends Identifiable> datas)
-    throws SQLException, NotContainsException {
+                               List<? extends Identifiable> datas) throws SQLException, NotContainsException {
 
         String                    tableName     = t.getTableName();
         Data                      table         = dbData.getTable(tableName);
@@ -397,7 +410,8 @@ public class ThothLite
                                                   storing.getCount(),
                                                   LocalDate.now(),
                                                   storing.getCurrency(),
-                                                  storing.getCurrency().getCourse(),
+                                                  storing.getCurrency()
+                                                         .getCourse(),
                                                   ""));
 
                 if (!products.contains(storagable)) {
@@ -458,10 +472,10 @@ public class ThothLite
      * @param datas удаляемые записи.
      */
     private void removeFromTable(AvaliableTables table,
-                                 List<? extends Identifiable> datas)
-    throws SQLException, NotContainsException {
-        String                                     tableName = table.getTableName();
-        Map<String, List<HashMap<String, Object>>> data      = dbData.getTable(tableName).convertToMap(datas);
+                                 List<? extends Identifiable> datas) throws SQLException, NotContainsException {
+        String tableName = table.getTableName();
+        Map<String, List<HashMap<String, Object>>> data = dbData.getTable(tableName)
+                                                                .convertToMap(datas);
         for (String name : data.keySet()) {
             database.remove(name, data.get(name));
         }
@@ -475,10 +489,10 @@ public class ThothLite
      * @param datas обновлённые записи.
      */
     private void updateInTable(AvaliableTables table,
-                               List<? extends Identifiable> datas)
-    throws SQLException, NotContainsException {
-        String                                     tableName = table.getTableName();
-        Map<String, List<HashMap<String, Object>>> data      = dbData.getTable(tableName).convertToMap(datas);
+                               List<? extends Identifiable> datas) throws SQLException, NotContainsException {
+        String tableName = table.getTableName();
+        Map<String, List<HashMap<String, Object>>> data = dbData.getTable(tableName)
+                                                                .convertToMap(datas);
         for (String name : data.keySet()) {
             database.update(name, data.get(name));
         }
@@ -490,4 +504,9 @@ public class ThothLite
 interface DataBaseAction {
     void action(AvaliableTables table,
                 List<? extends Identifiable> datas) throws SQLException, NotContainsException, ClassNotFoundException;
+}
+
+interface SubscribeAction {
+    void action(EnumPublicator publisher,
+                Flow.Subscriber<?> subscriber);
 }
