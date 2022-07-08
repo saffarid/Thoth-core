@@ -44,7 +44,7 @@ public class StructureDescription {
     /* --- Таблицы со списочными данными --- */
 
     /**
-     * Таблица едениц измерения
+     * Таблица единиц измерения
      */
     public static class CountTypes {
         public static final String TABLE_NAME = "count_type";

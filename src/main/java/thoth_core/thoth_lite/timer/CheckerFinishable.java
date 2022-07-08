@@ -3,34 +3,29 @@ package thoth_core.thoth_lite.timer;
 import thoth_core.thoth_lite.config.impl.Config;
 import thoth_core.thoth_lite.db_data.db_data_element.properties.Finishable;
 import thoth_core.thoth_lite.db_data.db_data_element.properties.Identifiable;
-import org.json.simple.parser.ParseException;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.*;
 import java.util.concurrent.*;
 
 public class CheckerFinishable
-        implements
-        Traceable
-        , Flow.Subscriber<List<Finishable>>
-        , Closeable {
+        implements Traceable, Flow.Subscriber<List<Finishable>>, Closeable {
 
     private final int POOL_SIZE = 5;
 
     private SubmissionPublisher publisher;
-    private Flow.Subscription subscription;
+    private Flow.Subscription   subscription;
 
     private HashMap<Finishable, ScheduledFuture> taskMap;
-    private List<HashMap<WhatDo, Finishable>> buffer;
-    private ScheduledThreadPoolExecutor poolExecutor;
+    private List<HashMap<WhatDo, Finishable>>    buffer;
+    private ScheduledThreadPoolExecutor          poolExecutor;
 
     public CheckerFinishable() {
-        publisher = new SubmissionPublisher(ForkJoinPool.commonPool(), POOL_SIZE);
+        publisher    = new SubmissionPublisher(ForkJoinPool.commonPool(), POOL_SIZE);
         poolExecutor = new ScheduledThreadPoolExecutor(POOL_SIZE);
-        taskMap = new HashMap<>();
-        buffer = new LinkedList<>();
+        taskMap      = new HashMap<>();
+        buffer       = new LinkedList<>();
     }
 
     /**
@@ -39,10 +34,11 @@ public class CheckerFinishable
      */
     private Finishable isFinishableNotificationPlanning(Identifiable identifiable) {
         Optional<Finishable> first = taskMap.keySet()
-                .stream()
-                .filter(finishable -> ((Identifiable) finishable).getId().equals(identifiable.getId()))
-                .findFirst();
-        if (first.isEmpty()) return null;
+                                            .stream()
+                                            .filter(finishable -> ((Identifiable) finishable).getId()
+                                                                                             .equals(identifiable.getId()))
+                                            .findFirst();
+        if (first.isEmpty()) {return null;}
         return first.get();
     }
 
@@ -55,33 +51,34 @@ public class CheckerFinishable
         for (Finishable finishable : finishables) {
 
             Finishable finishablePlanning = isFinishableNotificationPlanning((Identifiable) finishable);
-            boolean finishableIsPlan = finishablePlanning != null;
+            boolean    finishableIsPlan   = finishablePlanning != null;
 
             if (finishableIsPlan) {
                 //Ветка запланированной задачи
                 if (finishable.isFinish()) {
-                    taskMap.get(finishablePlanning).cancel(true);
+                    taskMap.get(finishablePlanning)
+                           .cancel(true);
                     taskMap.remove(finishablePlanning);
                     notifySubscribers(wrappedFinishable(WhatDo.CANCEL, finishablePlanning));
                 }
-            } else {
+            }
+            else {
                 //Ветка не запланированной задачи
-                if (finishable.isFinish()) continue;
+                if (finishable.isFinish()) {continue;}
 
                 LocalDate finishDate = finishable.finishDate();
-                int daysDelay = Period.between(currentDate, finishDate).getDays();
+                int daysDelay = Period.between(currentDate, finishDate)
+                                      .getDays();
                 Runnable task = () -> notifySubscribers(wrappedFinishable(WhatDo.PLANNING, finishable));
 
-                if ((daysDelay > Config.getInstance().getDelivered().getDayBeforeDelivery().getValue()) && (finishDate.isAfter(currentDate))) {
-                    taskMap.put(
-                            finishable,
-                            poolExecutor.schedule(task, daysDelay, TimeUnit.DAYS)
-                    );
-                } else {
-                    taskMap.put(
-                            finishable,
-                            poolExecutor.schedule(task, 1, TimeUnit.SECONDS)
-                    );
+                if ((daysDelay > Config.getInstance()
+                                       .getDelivered()
+                                       .getDayBeforeDelivery()
+                                       .getValue()) && (finishDate.isAfter(currentDate))) {
+                    taskMap.put(finishable, poolExecutor.schedule(task, daysDelay, TimeUnit.DAYS));
+                }
+                else {
+                    taskMap.put(finishable, poolExecutor.schedule(task, 1, TimeUnit.SECONDS));
                 }
 
             }
@@ -89,7 +86,8 @@ public class CheckerFinishable
         }
     }
 
-    private HashMap<WhatDo, Finishable> wrappedFinishable(WhatDo whatDo, Finishable finishable) {
+    private HashMap<WhatDo, Finishable> wrappedFinishable(WhatDo whatDo,
+                                                          Finishable finishable) {
         HashMap<WhatDo, Finishable> res = new HashMap<>();
         res.put(whatDo, finishable);
         return res;
@@ -98,7 +96,8 @@ public class CheckerFinishable
     @Override
     public void close(Finishable finishable) {
         //Завершаем выполнение задачи
-        taskMap.get(finishable).cancel(false);
+        taskMap.get(finishable)
+               .cancel(false);
         //Удаляем из списка finishable-объект
         taskMap.remove(finishable);
         //Завершаем finishable-объект
@@ -121,7 +120,8 @@ public class CheckerFinishable
     private void notifySubscribers(HashMap<WhatDo, Finishable> finishable) {
         if (publisher.hasSubscribers()) {
             publisher.submit(finishable);
-        } else {
+        }
+        else {
             buffer.add(finishable);
         }
     }

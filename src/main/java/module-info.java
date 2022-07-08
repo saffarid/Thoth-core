@@ -10,7 +10,6 @@ module thoth {
     exports thoth_core.thoth_lite.timer;
     exports thoth_core.thoth_lite.info;
 
-
     requires java.sql;
     requires json.simple;
     requires slf4j.api;

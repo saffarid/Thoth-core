@@ -1,18 +1,16 @@
 package thoth_core.thoth_lite.db_data;
 
-import thoth_core.thoth_lite.ThothLite;
 import thoth_core.thoth_lite.exceptions.NotContainsException;
 import thoth_core.thoth_lite.db_data.tables.*;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
 
 public class DBData {
 
-    private static DBData dbData;
-    private List<Data> tables;
+    private static DBData     dbData;
+    private        List<Data> tables;
 
     private DBData() {
         tables = new LinkedList<>();
@@ -36,29 +34,24 @@ public class DBData {
 
     }
 
-    public static DBData getInstance(){
-        if(dbData == null){
+    public static DBData getInstance() {
+        if (dbData == null) {
             dbData = new DBData();
         }
         return dbData;
     }
 
-    public Data getTable(
-            String name
-    ) throws NotContainsException {
+    public Data getTable(String name) throws NotContainsException {
         Optional<Data> res = tables.stream()
-                .filter(data ->  name.startsWith(data.getName()))
-                .findFirst();
-        if(!res.isPresent()) throw new NotContainsException();
+                                   .filter(data -> name.startsWith(data.getName()))
+                                   .findFirst();
+        if (!res.isPresent()) {throw new NotContainsException();}
         return res.get();
     }
 
-    public TableReadable getTableReadable(
-            String name
-    ) throws NotContainsException {
+    public TableReadable getTableReadable(String name) throws NotContainsException {
         return getTable(name);
     }
-
 
 
 }
