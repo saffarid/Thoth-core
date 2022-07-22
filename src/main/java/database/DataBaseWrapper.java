@@ -4,13 +4,10 @@ import database.Column.Autoincrement;
 import database.Column.ForeignKey;
 import database.Column.PrimaryKey;
 import database.Column.TableColumn;
-import thoth_core.thoth_lite.CoreLogger;
 
 import java.io.File;
 import java.sql.*;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 
